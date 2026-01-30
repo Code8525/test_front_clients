@@ -95,8 +95,9 @@ def main() -> None:
             print("   OK: 422, VALIDATION_ERROR, ошибка по полю inn")
 
     print("2. Валидация: ИНН > 12 символов (PATCH)")
-    # Сначала создаём клиента с валидным ИНН
+    # Сначала создаём клиента с валидным уникальным ИНН
     unique_name = f"Тест PATCH ИНН {uuid.uuid4().hex[:8]}"
+    inn_patch_ok = "77" + str(uuid.uuid4().int % 10**8).zfill(8)
     status, created = request(
         "POST",
         "/api/clients",
@@ -104,7 +105,7 @@ def main() -> None:
             "name": unique_name,
             "full_name": "ООО Тест PATCH",
             "party_type": "legal",
-            "inn": "7707123456",
+            "inn": inn_patch_ok,
             "region_id": region_id,
         },
     )
@@ -130,6 +131,7 @@ def main() -> None:
 
     # --- Валидация: ИНН ровно 12 символов — допустимо ---
     print("3. Валидация: ИНН ровно 12 символов — допустимо")
+    inn_12 = str(uuid.uuid4().int % 10**12).zfill(12)
     status, created = request(
         "POST",
         "/api/clients",
@@ -137,7 +139,7 @@ def main() -> None:
             "name": f"Тест ИНН 12 символов {uuid.uuid4().hex[:6]}",
             "full_name": "ООО Тест 12",
             "party_type": "legal",
-            "inn": "123456789012",
+            "inn": inn_12,
             "region_id": region_id,
         },
     )
@@ -151,6 +153,7 @@ def main() -> None:
     # --- Бизнес-ошибки: дубликат имени ---
     print("4. Бизнес: дубликат имени (ClientAlreadyExists)")
     name_unique = f"Уникальное имя {uuid.uuid4().hex[:8]}"
+    inn_first = "77" + str(uuid.uuid4().int % 10**8).zfill(8)
     status, c1 = request(
         "POST",
         "/api/clients",
@@ -158,7 +161,7 @@ def main() -> None:
             "name": name_unique,
             "full_name": "ООО Первый",
             "party_type": "legal",
-            "inn": "7707111111",
+            "inn": inn_first,
             "region_id": region_id,
         },
     )
@@ -173,7 +176,7 @@ def main() -> None:
                 "name": name_unique,
                 "full_name": "ООО Второй",
                 "party_type": "legal",
-                "inn": "7707222222",
+                "inn": "77" + str(uuid.uuid4().int % 10**8).zfill(8),
                 "region_id": region_id,
             },
         )
@@ -189,7 +192,7 @@ def main() -> None:
 
     # --- Бизнес-ошибки: дубликат ИНН ---
     print("5. Бизнес: дубликат ИНН (ClientAlreadyExistsByInn)")
-    inn_unique = "7707333333"
+    inn_unique = "77" + str(uuid.uuid4().int % 10**8).zfill(8)
     status, c1 = request(
         "POST",
         "/api/clients",
@@ -233,15 +236,16 @@ def main() -> None:
     if status != 404:
         print("   ОШИБКА: ожидался 404, получен", status, data)
         failed += 1
-    elif not data or data.get("errorName") != "CLIENT_NOT_FOUND_ERROR":
-        print("   ОШИБКА: ожидался errorName=CLIENT_NOT_FOUND_ERROR, получено", data)
+    elif not data or data.get("errorName") != "CLIENT_NOT_FOUND":
+        print("   ОШИБКА: ожидался errorName=CLIENT_NOT_FOUND, получено", data)
         failed += 1
     else:
-        print("   OK: 404, CLIENT_NOT_FOUND_ERROR")
+        print("   OK: 404, CLIENT_NOT_FOUND")
 
     # --- Бизнес-ошибки: родительский клиент не найден ---
     print("7. Бизнес: родительский клиент не найден при создании (ParentClientNotFound)")
     fake_parent_id = str(uuid.uuid4())
+    inn_child = "77" + str(uuid.uuid4().int % 10**8).zfill(8)
     status, data = request(
         "POST",
         "/api/clients",
@@ -249,7 +253,7 @@ def main() -> None:
             "name": f"Дочерний {uuid.uuid4().hex[:6]}",
             "full_name": "ООО Дочерний",
             "party_type": "legal",
-            "inn": "7707444444",
+            "inn": inn_child,
             "region_id": region_id,
             "parent_id": fake_parent_id,
         },
@@ -257,14 +261,15 @@ def main() -> None:
     if status != 404:
         print("   ОШИБКА: ожидался 404, получен", status, data)
         failed += 1
-    elif not data or data.get("errorName") != "PARENT_CLIENT_NOT_FOUND_ERROR":
-        print("   ОШИБКА: ожидался errorName=PARENT_CLIENT_NOT_FOUND_ERROR, получено", data)
+    elif not data or data.get("errorName") != "PARENT_CLIENT_NOT_FOUND":
+        print("   ОШИБКА: ожидался errorName=PARENT_CLIENT_NOT_FOUND, получено", data)
         failed += 1
     else:
-        print("   OK: 404, PARENT_CLIENT_NOT_FOUND_ERROR")
+        print("   OK: 404, PARENT_CLIENT_NOT_FOUND")
 
     # --- Бизнес-ошибки: родитель не найден при PATCH ---
     print("8. Бизнес: родительский клиент не найден при обновлении")
+    inn_patch_parent = "77" + str(uuid.uuid4().int % 10**8).zfill(8)
     status, created = request(
         "POST",
         "/api/clients",
@@ -272,7 +277,7 @@ def main() -> None:
             "name": f"Для PATCH parent {uuid.uuid4().hex[:6]}",
             "full_name": "ООО Тест",
             "party_type": "legal",
-            "inn": "7707555555",
+            "inn": inn_patch_parent,
             "region_id": region_id,
         },
     )
@@ -289,11 +294,11 @@ def main() -> None:
         if status != 404:
             print("   ОШИБКА: ожидался 404, получен", status, data)
             failed += 1
-        elif not data or data.get("errorName") != "PARENT_CLIENT_NOT_FOUND_ERROR":
-            print("   ОШИБКА: ожидался errorName=PARENT_CLIENT_NOT_FOUND_ERROR, получено", data)
+        elif not data or data.get("errorName") != "PARENT_CLIENT_NOT_FOUND":
+            print("   ОШИБКА: ожидался errorName=PARENT_CLIENT_NOT_FOUND, получено", data)
             failed += 1
         else:
-            print("   OK: 404, PARENT_CLIENT_NOT_FOUND_ERROR при PATCH")
+            print("   OK: 404, PARENT_CLIENT_NOT_FOUND при PATCH")
 
     if failed:
         print(f"\n=== Провалено проверок: {failed} ===")

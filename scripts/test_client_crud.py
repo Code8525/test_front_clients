@@ -6,6 +6,8 @@
 import json
 import urllib.error
 import urllib.request
+import uuid
+
 BASE = "http://127.0.0.1:8000"
 
 
@@ -45,9 +47,10 @@ def get_first_region_id() -> str | None:
     if status != 200 or not data:
         print("Не удалось получить список регионов")
         return None
-    if not data:
+    items = data.get("items") or []
+    if not items:
         return None
-    return data[0]["id"]
+    return items[0]["id"]
 
 
 def main() -> None:
@@ -60,12 +63,13 @@ def main() -> None:
         return
     print("1. Регион для клиента:", region_id)
 
-    # 2) Создание клиента
+    # 2) Создание клиента (уникальные name/inn для повторных запусков)
+    suffix = uuid.uuid4().hex[:8]
     create_body = {
-        "name": "Тест CRUD",
+        "name": f"Тест CRUD {suffix}",
         "full_name": "ООО Тест CRUD",
         "party_type": "legal",
-        "inn": "7707123456",
+        "inn": "77" + str(uuid.uuid4().int % 10**8).zfill(8),
         "region_id": region_id,
     }
     status, created = request("POST", "/api/clients", create_body)
@@ -76,7 +80,7 @@ def main() -> None:
     print("2. Создание клиента: OK, client_id =", client_id)
 
     # 3) Редактирование клиента
-    update_body = {"name": "Тест CRUD (обновлён)", "inn": "7707987654"}
+    update_body = {"name": f"Тест CRUD (обновлён {suffix})", "inn": "77" + str(uuid.uuid4().int % 10**8).zfill(8)}
     status, updated = request("PATCH", f"/api/clients/{client_id}", update_body)
     if status != 200:
         print("3. Редактирование клиента: ОШИБКА", status, updated)

@@ -99,7 +99,7 @@ def get_client(client_id: uuid.UUID, db: Session = Depends(get_db)) -> Client:
     client = db.query(ClientModel).filter(ClientModel.client_id == client_id).first()
     if not client:
         raise ClientNotFound()
-    return ClientModel.model_validate(client)
+    return Client.model_validate(client)
 
 
 @router.post("", response_model=Client, status_code=201)
@@ -118,7 +118,7 @@ def create_client(body: ClientCreate, db: Session = Depends(get_db)) -> Client:
     db.add(client)
     db.commit()
     db.refresh(client)
-    return ClientModel.model_validate(client)
+    return Client.model_validate(client)
 
 
 @router.patch("/{client_id}", response_model=Client)
@@ -138,7 +138,7 @@ def update_client(
         setattr(client, key, value)
     db.commit()
     db.refresh(client)
-    return ClientModel.model_validate(client)
+    return Client.model_validate(client)
 
 
 @router.delete("/{client_id}", status_code=204)
