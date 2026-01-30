@@ -51,7 +51,10 @@ def get_first_region_id() -> str | None:
     status, data = request("GET", "/api/regions")
     if status != 200 or not data:
         return None
-    return data[0]["id"]
+    items = data.get("items") or []
+    if not items:
+        return None
+    return items[0]["id"]
 
 
 def main() -> None:
