@@ -12,4 +12,4 @@ router = APIRouter()
 def list_regions(db: Session = Depends(get_db)) -> RegionsResponse:
     """Список регионов для селекта Регион."""
     regions = db.query(RegionModel).order_by(RegionModel.name).all()
-    return RegionsResponse(items=[RegionModel.model_validate(r) for r in regions])
+    return RegionsResponse(items=[Region.model_validate(r) for r in regions])
