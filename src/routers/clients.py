@@ -88,7 +88,7 @@ def list_clients(
         order_col = order_col.asc()
     items = q.order_by(order_col).offset(params.offset).limit(params.limit).all()
     return ClientsResponse(
-        items=[ClientModel.model_validate(c) for c in items],
+        items=[Client.model_validate(c) for c in items],
         total=total,
     )
 
