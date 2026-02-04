@@ -63,3 +63,10 @@ class ClientsResponse(SchemaBase):
 
     items: list[Client]
     total: int
+
+
+class ClientParentsResponse(SchemaBase):
+    """Ответ GET /api/clients/parents — список головных клиентов для селекта."""
+
+    items: list[Client]
+    total: int

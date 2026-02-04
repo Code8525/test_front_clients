@@ -13,13 +13,7 @@ from src.exceptions import (
     ParentClientNotFound,
 )
 from src.models.client_model import ClientModel
-from src.schemas.client import (
-    ClientCreate,
-    ClientListQuery,
-    Client,
-    ClientsResponse,
-    ClientUpdate,
-)
+from src.schemas.client import Client, ClientCreate, ClientListQuery, ClientParentsResponse, ClientsResponse, ClientUpdate
 from src.types.client_sort_by import ClientSortBy
 from src.types.sort_order import SortOrder
 
@@ -93,8 +87,8 @@ def list_clients(
     )
 
 
-@router.get("/parents", response_model=ClientsResponse)
-def list_parent_clients(db: Session = Depends(get_db)) -> ClientsResponse:
+@router.get("/parents", response_model=ClientParentsResponse)
+def list_parent_clients(db: Session = Depends(get_db)) -> ClientParentsResponse:
     """
     Список головных (root) клиентов для селекта «Родительский клиент».
 
@@ -103,10 +97,7 @@ def list_parent_clients(db: Session = Depends(get_db)) -> ClientsResponse:
     """
     q = db.query(ClientModel).filter(ClientModel.parent_id.is_(None))
     items = q.order_by(ClientModel.name.asc()).all()
-    return ClientsResponse(
-        items=[Client.model_validate(c) for c in items],
-        total=len(items),
-    )
+    return ClientParentsResponse(items=[Client.model_validate(c) for c in items], total=len(items))
 
 
 @router.get("/{client_id}", response_model=Client)
