@@ -93,6 +93,22 @@ def list_clients(
     )
 
 
+@router.get("/parents", response_model=ClientsResponse)
+def list_parent_clients(db: Session = Depends(get_db)) -> ClientsResponse:
+    """
+    Список головных (root) клиентов для селекта «Родительский клиент».
+
+    Возвращаются клиенты без parent_id, отсортированные по имени.
+    Важно: роут объявлен ДО /{client_id}, иначе /parents будет матчиться как path-параметр.
+    """
+    q = db.query(ClientModel).filter(ClientModel.parent_id.is_(None))
+    items = q.order_by(ClientModel.name.asc()).all()
+    return ClientsResponse(
+        items=[Client.model_validate(c) for c in items],
+        total=len(items),
+    )
+
+
 @router.get("/{client_id}", response_model=Client)
 def get_client(client_id: uuid.UUID, db: Session = Depends(get_db)) -> Client:
     """Один клиент по client_id."""
